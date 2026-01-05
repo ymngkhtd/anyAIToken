@@ -6,39 +6,40 @@ import crypto from 'crypto';
 // Ensure DB table exists
 initDB();
 
-export function createProfile(name: string, provider: string, providersData: ProviderConfig[]): Profile {
+export function createProfile(name: string, provider: string, providersData: ProviderConfig[], website?: string): Profile {
   const id = crypto.randomUUID();
   // Encrypt the entire providers array structure
   const envString = JSON.stringify(providersData);
   const encryptedEnv = encrypt(envString);
 
   const stmt = db.prepare(`
-    INSERT INTO profiles (id, name, provider, env_vars)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO profiles (id, name, provider, website, env_vars)
+    VALUES (?, ?, ?, ?, ?)
   `);
 
-  stmt.run(id, name, provider, encryptedEnv);
+  stmt.run(id, name, provider, website || null, encryptedEnv);
 
   return {
     id,
     name,
     provider,
+    website,
     env_vars: encryptedEnv,
     created_at: new Date().toISOString()
   };
 }
 
-export function updateProfile(name: string, providersData: ProviderConfig[]): boolean {
+export function updateProfile(name: string, providersData: ProviderConfig[], website?: string): boolean {
   const envString = JSON.stringify(providersData);
   const encryptedEnv = encrypt(envString);
 
   const stmt = db.prepare(`
     UPDATE profiles 
-    SET env_vars = ? 
+    SET env_vars = ?, website = ?
     WHERE name = ?
   `);
 
-  const info = stmt.run(encryptedEnv, name);
+  const info = stmt.run(encryptedEnv, website || null, name);
   return info.changes > 0;
 }
 
@@ -88,7 +89,7 @@ export function getProfile(name: string): DecryptedProfile | null {
 }
 
 export function listProfiles(): Omit<Profile, 'env_vars'>[] {
-  const stmt = db.prepare('SELECT id, name, provider, created_at FROM profiles');
+  const stmt = db.prepare('SELECT id, name, provider, website, created_at FROM profiles');
   return stmt.all() as Omit<Profile, 'env_vars'>[];
 }
 

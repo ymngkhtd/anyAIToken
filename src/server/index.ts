@@ -46,7 +46,7 @@ app.get('/api/profiles/:name', (req, res) => {
 // Create a new profile
 app.post('/api/profiles', (req, res) => {
   try {
-    const { name, provider, providers } = req.body;
+    const { name, provider, providers, website } = req.body;
     
     // Support legacy payload or new payload
     // If 'providers' is missing but 'env_vars' exists (old format), we might want to adapt, 
@@ -59,11 +59,12 @@ app.post('/api/profiles', (req, res) => {
     // If providers array is sent directly
     const providersData = providers || []; 
 
-    const newProfile = createProfile(name, provider || 'custom', providersData);
+    const newProfile = createProfile(name, provider || 'custom', providersData, website);
     res.status(201).json({
       id: newProfile.id,
       name: newProfile.name,
       provider: newProfile.provider,
+      website: newProfile.website,
       created_at: newProfile.created_at
     });
   } catch (error: any) {
@@ -80,13 +81,13 @@ app.post('/api/profiles', (req, res) => {
 app.put('/api/profiles/:name', (req, res) => {
   try {
     const { name } = req.params;
-    const { providers } = req.body;
+    const { providers, website } = req.body;
 
     if (!providers || !Array.isArray(providers)) {
       return res.status(400).json({ error: 'Invalid providers data' });
     }
 
-    const success = updateProfile(name, providers);
+    const success = updateProfile(name, providers, website);
     if (success) {
       res.status(200).json({ message: 'Profile updated' });
     } else {

@@ -20,12 +20,20 @@ export function initDB() {
       id TEXT PRIMARY KEY,
       name TEXT UNIQUE NOT NULL,
       provider TEXT NOT NULL,
+      website TEXT,
       env_vars TEXT NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `;
   
   db.exec(createProfilesTable);
+
+  // Migration: Add website column if it doesn't exist
+  try {
+    db.exec("ALTER TABLE profiles ADD COLUMN website TEXT");
+  } catch (e) {
+    // Column might already exist, ignore error
+  }
 }
 
 export default db;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Trash2, Plus, Terminal, Key, Database, Copy, Edit2, XCircle } from 'lucide-react';
+import { Trash2, Plus, Terminal, Key, Database, Copy, Edit2, XCircle, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile, ProviderConfig, DecryptedProfile } from './types';
 import { ProviderCard } from './components/ProviderCard';
@@ -14,6 +14,7 @@ function App() {
   const [editProfileName, setEditProfileName] = useState<string | null>(null); // Name of profile being edited (null if new)
   
   const [name, setName] = useState('');
+  const [website, setWebsite] = useState('');
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
 
   const fetchProfiles = async () => {
@@ -35,6 +36,7 @@ function App() {
     setIsEditing(false);
     setEditProfileName(null);
     setName('');
+    setWebsite('');
     setProviders([]);
   };
 
@@ -58,6 +60,7 @@ function App() {
       const data = res.data;
       
       setName(data.name);
+      setWebsite(data.website || '');
       setProviders(data.providers);
       setEditProfileName(data.name);
       setIsEditing(true);
@@ -76,7 +79,8 @@ function App() {
       if (editProfileName) {
         // Update existing
         await axios.put(`/api/profiles/${editProfileName}`, {
-          providers
+          providers,
+          website
         });
       } else {
         // Create new
@@ -84,7 +88,8 @@ function App() {
           name,
           // infer primary provider type from the first one
           provider: providers[0].type, 
-          providers
+          providers,
+          website
         });
       }
 
@@ -185,6 +190,19 @@ function App() {
                 <p className="text-xs text-slate-400 mt-1">This is the name you will use in the CLI (e.g. <code>ais run {name || '...'}</code>)</p>
               </div>
 
+              {/* Website URL */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Provider Website (Optional)</label>
+                <input
+                  type="url"
+                  placeholder="https://dashboard.example.com"
+                  className="w-full md:w-1/2 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  value={website}
+                  onChange={e => setWebsite(e.target.value)}
+                />
+                <p className="text-xs text-slate-400 mt-1">Quick access link to the provider's dashboard.</p>
+              </div>
+
               {/* Providers List */}
               <div className="space-y-4">
                  <div className="flex items-center justify-between">
@@ -265,6 +283,17 @@ function App() {
                           {profile.provider ? profile.provider[0].toUpperCase() : '?'}
                         </div>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                           {profile.website && (
+                             <a
+                               href={profile.website}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                               title="Open Provider Website"
+                             >
+                               <ExternalLink className="w-4 h-4" />
+                             </a>
+                           )}
                            <button
                             onClick={() => startEditProfile(profile.name)}
                             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
