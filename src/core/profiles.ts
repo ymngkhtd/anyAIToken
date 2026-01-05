@@ -1,14 +1,15 @@
 import db, { initDB } from './db';
 import { encrypt, decrypt } from './encryption';
-import { Profile, DecryptedProfile } from '../types';
+import { Profile, DecryptedProfile, ProviderConfig } from '../types';
 import crypto from 'crypto';
 
 // Ensure DB table exists
 initDB();
 
-export function createProfile(name: string, provider: Profile['provider'], envVars: Record<string, string>): Profile {
+export function createProfile(name: string, provider: string, providersData: ProviderConfig[]): Profile {
   const id = crypto.randomUUID();
-  const envString = JSON.stringify(envVars);
+  // Encrypt the entire providers array structure
+  const envString = JSON.stringify(providersData);
   const encryptedEnv = encrypt(envString);
 
   const stmt = db.prepare(`
@@ -22,9 +23,23 @@ export function createProfile(name: string, provider: Profile['provider'], envVa
     id,
     name,
     provider,
-    env_vars: encryptedEnv, // Return encrypted state
-    created_at: new Date().toISOString() // Approximate
+    env_vars: encryptedEnv,
+    created_at: new Date().toISOString()
   };
+}
+
+export function updateProfile(name: string, providersData: ProviderConfig[]): boolean {
+  const envString = JSON.stringify(providersData);
+  const encryptedEnv = encrypt(envString);
+
+  const stmt = db.prepare(`
+    UPDATE profiles 
+    SET env_vars = ? 
+    WHERE name = ?
+  `);
+
+  const info = stmt.run(encryptedEnv, name);
+  return info.changes > 0;
 }
 
 export function getProfile(name: string): DecryptedProfile | null {
@@ -34,11 +49,37 @@ export function getProfile(name: string): DecryptedProfile | null {
   if (!profile) return null;
 
   try {
-    const decryptedEnvString = decrypt(profile.env_vars);
-    const env_vars = JSON.parse(decryptedEnvString);
+    const decryptedString = decrypt(profile.env_vars);
+    let parsedData: any;
+    try {
+      parsedData = JSON.parse(decryptedString);
+    } catch {
+      // Fallback for potentially malformed JSON (though unlikely if encrypted properly)
+      parsedData = {};
+    }
+
+    // Normalize data to ProviderConfig[]
+    // Old format: { "KEY": "VALUE" }
+    // New format: [ { id, type, vars: [{key, value}] } ]
+    let providers: any[] = [];
+
+    if (Array.isArray(parsedData)) {
+      providers = parsedData;
+    } else {
+      // Convert old format to new format single provider
+      const vars = Object.entries(parsedData).map(([key, value]) => ({ key, value: String(value) }));
+      if (vars.length > 0) {
+        providers.push({
+          id: 'legacy-1',
+          type: profile.provider,
+          vars
+        });
+      }
+    }
+
     return {
       ...profile,
-      env_vars
+      providers: providers // This replaces the old 'env_vars' object in the return type
     };
   } catch (error) {
     console.error(`Failed to decrypt profile ${name}`, error);

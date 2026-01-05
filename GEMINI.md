@@ -75,21 +75,38 @@ anyAIToken/
 ## 5. 开发路线图 (Roadmap)
 
 ### Phase 1: 核心引擎 (Core Engine)
-- [ ] 初始化 Monorepo 或标准 TS 项目结构。
-- [ ] 实现 SQLite 连接与 CRUD 操作。
-- [ ] 实现 AES 加密/解密模块。
-- [ ] 编写测试用例验证数据存取。
+- [x] 初始化 Monorepo 或标准 TS 项目结构。
+- [x] 实现 SQLite 连接与 CRUD 操作。
+- [x] 实现 AES 加密/解密模块。
+- [x] 编写测试用例验证数据存取。
 
 ### Phase 2: CLI 执行器 (The Wrapper)
-- [ ] 实现 `ais run <profile> -- <cmd>` 命令解析。
-- [ ] 实现环境变量注入与子进程 Spawn。
-- [ ] 验证跨平台兼容性 (特别是 Windows 下的 Path 和 Env 处理)。
+- [x] 实现 `ais run <profile> -- <cmd>` 命令解析。
+- [x] 实现环境变量注入与子进程 Spawn。
+- [x] 验证跨平台兼容性 (特别是 Windows 下的 Path 和 Env 处理)。
 
 ### Phase 3: 可视化管理 (Web UI)
-- [ ] 搭建 Vite + React 环境。
-- [ ] 实现本地 API Server (Express 或 Fastify)。
-- [ ] 开发 Profile 管理界面 (CRUD)。
+- [x] 搭建 Vite + React 环境。
+- [x] 实现本地 API Server (Express 或 Fastify)。
+- [x] 开发 Profile 管理界面 (CRUD)。
 - [ ] (Optional) 预设各大模型厂商的 Env 模板。
+
+### Phase 4: 多 Provider 重构 (Multi-Provider Support)
+#### Backend
+- [ ] **Type Definition**: 更新 `Profile` 接口支持 Provider 数组结构。
+- [ ] **Database**: 升级 `env_vars` 存储结构，支持 `[{type, vars: []}]` 的加密 JSON。
+- [ ] **Runner**: 适配新的数据结构，解析多 Provider 环境变量。
+- [ ] **API**: 
+    - [ ] 升级 `POST /api/profiles` 支持复杂结构。
+    - [ ] 新增 `PUT /api/profiles/:name` 支持更新操作。
+    - [ ] 新增 `GET /api/profiles/:name` 用于编辑回显。
+
+#### Frontend
+- [ ] **Components**: 
+    - [ ] `ProviderCard` (单 Provider 配置块)。
+    - [ ] `EnvVarTable` (环境变量键值对编辑器)。
+- [ ] **Logic**: 重构表单状态管理，支持动态增删 Provider 和 Variables。
+- [ ] **UI**: 实现编辑模式，优化新建流程。
 
 ## 6. 常用命令参考 (Future)
 

@@ -9,10 +9,20 @@ export function runCommand(profileName: string, command: string, args: string[])
     process.exit(1);
   }
 
+  // Flatten providers into a single env object
+  const profileEnv: Record<string, string> = {};
+  if (profile.providers) {
+    profile.providers.forEach(provider => {
+      provider.vars.forEach(v => {
+        profileEnv[v.key] = v.value;
+      });
+    });
+  }
+
   // Merge current environment with profile variables
   const env = {
     ...process.env,
-    ...profile.env_vars
+    ...profileEnv
   };
 
   // Spawn the child process

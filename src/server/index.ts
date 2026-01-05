@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { createProfile, deleteProfile, listProfiles } from '../core/profiles';
+import { createProfile, deleteProfile, listProfiles, updateProfile, getProfile } from '../core/profiles';
+import { Profile } from '../types';
 
 const app = express();
 const PORT = 3000;
@@ -16,7 +17,7 @@ if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
 }
 
-// Get all profiles (without sensitive env vars)
+// Get all profiles (summary)
 app.get('/api/profiles', (req, res) => {
   try {
     const profiles = listProfiles();
@@ -26,16 +27,39 @@ app.get('/api/profiles', (req, res) => {
   }
 });
 
+// Get single profile details (decrypted)
+app.get('/api/profiles/:name', (req, res) => {
+  try {
+    const { name } = req.params;
+    const profile = getProfile(name);
+    if (profile) {
+      res.json(profile);
+    }
+    else {
+      res.status(404).json({ error: 'Profile not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
 // Create a new profile
 app.post('/api/profiles', (req, res) => {
   try {
-    const { name, provider, env_vars } = req.body;
+    const { name, provider, providers } = req.body;
     
-    if (!name || !provider || !env_vars) {
+    // Support legacy payload or new payload
+    // If 'providers' is missing but 'env_vars' exists (old format), we might want to adapt, 
+    // but the frontend will send 'providers' now.
+    
+    if (!name || (!provider && !providers)) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const newProfile = createProfile(name, provider, env_vars);
+    // If providers array is sent directly
+    const providersData = providers || []; 
+
+    const newProfile = createProfile(name, provider || 'custom', providersData);
     res.status(201).json({
       id: newProfile.id,
       name: newProfile.name,
@@ -47,7 +71,30 @@ app.post('/api/profiles', (req, res) => {
     if (error.message && error.message.includes('UNIQUE constraint failed')) {
        return res.status(409).json({ error: 'Profile name already exists' });
     }
+    console.error(error);
     res.status(500).json({ error: 'Failed to create profile' });
+  }
+});
+
+// Update a profile
+app.put('/api/profiles/:name', (req, res) => {
+  try {
+    const { name } = req.params;
+    const { providers } = req.body;
+
+    if (!providers || !Array.isArray(providers)) {
+      return res.status(400).json({ error: 'Invalid providers data' });
+    }
+
+    const success = updateProfile(name, providers);
+    if (success) {
+      res.status(200).json({ message: 'Profile updated' });
+    } else {
+      res.status(404).json({ error: 'Profile not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 

@@ -36,16 +36,23 @@ program
   .description('Add a new profile (e.g. ais add my-claude claude ANTHROPIC_API_KEY=sk-...)')
   .action((name, provider, envVars) => {
     // Parse key=value strings
-    const envMap: Record<string, string> = {};
+    const vars: { key: string, value: string }[] = [];
     envVars.forEach((pair: string) => {
       const [key, ...values] = pair.split('=');
       if (key && values.length > 0) {
-        envMap[key] = values.join('=');
+        vars.push({ key, value: values.join('=') });
       }
     });
 
+    // Default to a single provider for CLI added profiles
+    const providersData = [{
+      id: 'cli-generated',
+      type: provider,
+      vars
+    }];
+
     try {
-      createProfile(name, provider as any, envMap);
+      createProfile(name, provider, providersData as any);
       console.log(`Profile '${name}' created successfully.`);
     } catch (err: any) {
       console.error('Error creating profile:', err.message);
