@@ -7,110 +7,71 @@
 
 ## 2. 技术栈架构 (Tech Stack)
 
-基于 "简单易维护" 的原则，我们放弃了 PostgreSQL，采用轻量级嵌入式方案。
-
 *   **Runtime**: Node.js (TypeScript)
-*   **Frontend**: React + Vite + TailwindCSS + Shadcn/UI (用于管理面板)
-*   **Backend/CLI**: Node.js + Commander.js (命令行交互) + Cross-Spawn (子进程管理)
-*   **Database**: SQLite (通过 `better-sqlite3` 或 `Prisma` 访问) - 单文件存储，无需部署。
+*   **Frontend**: React + Vite + TailwindCSS + Shadcn/UI (Lucide Icons)
+*   **Backend/CLI**: Node.js + Commander.js + Cross-Spawn
+*   **Database**: SQLite (`better-sqlite3`) - 单文件存储
 *   **Security**: AES-256-GCM 加密 (用于存储 API Keys)
 
 ## 3. 系统设计 (System Design)
 
 ### 3.1 核心工作流 (Workflow)
-系统由两部分组成：**管理服务** 和 **执行包装器 (Wrapper)**。
+1.  **Web UI 管理**: 用户通过 `ais ui` 启动本地服务，在界面上创建和编辑 Profile。每个 Profile 可以包含多个 Provider（如 Gemini, OpenAI, Claude）。
+2.  **数据存储**: 数据以加密 JSON 字符串形式存储在 SQLite 数据库中。
+3.  **CLI 执行**: 
+    *   用户运行 `ais run <profile> -- <command>`。
+    *   `ais` 解密对应的 Profile 结构，将所有 Provider 的环境变量拍平 (Flatten)。
+    *   注入 `process.env` 并通过子进程启动目标命令。
 
-1.  **配置阶段 (Web UI)**:
-    *   用户启动本地服务 (`anyai ui`)。
-    *   在 React 界面中创建 "Profile" (例如: `personal-claude`, `work-gemini`)。
-    *   输入加密的 API Key 和 Endpoint。
-    *   数据存入本地 SQLite `db.sqlite`。
-
-2.  **使用阶段 (CLI Wrapper)**:
-    *   用户在终端运行包装命令：
-        ```bash
-        # 语法: ais run <profile> -- <command>
-        ais run personal -- claude code "fix this bug"
-        ```
-    *   **CLI 解析流程**:
-        1.  查找 Profile `personal`。
-        2.  读取并解密对应的 Token/URL。
-        3.  构建临时的环境变量对象 (`process.env + { ANTHROPIC_API_KEY: ... }`)。
-        4.  使用 `spawn` 启动子进程 (`claude code "fix this bug"`)。
-        5.  管道传输 (Pipe) 标准输入/输出，保持交互性。
-
-### 3.2 数据库设计 (Schema Draft)
+### 3.2 数据结构 (Data Schema)
 
 **Profiles 表**
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | id | UUID | 主键 |
-| name | String | 唯一标识 (e.g., "personal") |
-| provider | String | 预设类型 (gemini, claude, openai, custom) |
-| env_vars | JSON | 加密存储的环境变量映射 (e.g., `{"GOOGLE_API_KEY": "enc_..."}`) |
-| created_at | DateTime | |
+| name | String | 唯一标识 |
+| provider | String | 主 Provider 类型 (主要用于前端图标展示) |
+| env_vars | Encrypted JSON | 存储 `ProviderConfig[]` 结构的加密字符串 |
 
-### 3.3 安全策略 (Security)
-*   **存储安全**: 所有的 Sensitive Data (API Keys) 在写入数据库前必须经过 AES-256 加密。
-*   **密钥管理**:
-    *   *方案 A (MVP)*: 依赖本地机器指纹或固定 Salt（防明文泄漏）。
-    *   *方案 B (推荐)*: 首次启动要求用户设置一个 Master Password，用于加解密 KeyRing。
-
-## 4. 目录结构 (Directory Structure)
-
-```text
-anyAIToken/
-├── package.json
-├── tsconfig.json
-├── GEMINI.md           # 架构文档
-├── db/                 # SQLite 数据库文件位置
-│   └── data.sqlite
-├── packages/
-│   ├── core/           # 核心逻辑 (DB, Encryption, Types)
-│   ├── cli/            # 命令行入口 (Commander, Wrapper logic)
-│   └── web/            # React 前端 (Vite project)
-└── scripts/            # 开发脚本
+**ProviderConfig 结构**
+```typescript
+{
+  id: string;
+  type: 'gemini' | 'claude' | 'openai' | 'custom';
+  vars: { key: string, value: string }[];
+}
 ```
 
-## 5. 开发路线图 (Roadmap)
+## 4. 开发路线图 (Roadmap)
 
-### Phase 1: 核心引擎 (Core Engine)
-- [x] 初始化 Monorepo 或标准 TS 项目结构。
-- [x] 实现 SQLite 连接与 CRUD 操作。
-- [x] 实现 AES 加密/解密模块。
-- [x] 编写测试用例验证数据存取。
+### Phase 1: 核心引擎 (Core Engine) - [x]
+### Phase 2: CLI 执行器 (The Wrapper) - [x]
+### Phase 3: 可视化管理 (Web UI) - [x]
+### Phase 4: 多 Provider 重构 (Multi-Provider Support) - [x]
+- [x] **Backend**: 支持 Provider 数组加密存储与解密。
+- [x] **Runner**: 适配多 Provider 环境变量拍平注入。
+- [x] **API**: 实现 CRUD 完整接口（GET/POST/PUT/DELETE）。
+- [x] **Frontend**: 实现 `ProviderCard` 组件与复杂 Profile 编辑器。
 
-### Phase 2: CLI 执行器 (The Wrapper)
-- [x] 实现 `ais run <profile> -- <cmd>` 命令解析。
-- [x] 实现环境变量注入与子进程 Spawn。
-- [x] 验证跨平台兼容性 (特别是 Windows 下的 Path 和 Env 处理)。
+## 5. 常用命令参考
 
-### Phase 3: 可视化管理 (Web UI)
-- [x] 搭建 Vite + React 环境。
-- [x] 实现本地 API Server (Express 或 Fastify)。
-- [x] 开发 Profile 管理界面 (CRUD)。
-- [ ] (Optional) 预设各大模型厂商的 Env 模板。
+*   `ais ui` - 启动 Web 管理界面
+*   `ais list` - 列出所有可用 Profile
+*   `ais run <profile> -- <cmd>` - 以指定配置运行命令
 
-### Phase 4: 多 Provider 重构 (Multi-Provider Support)
-#### Backend
-- [ ] **Type Definition**: 更新 `Profile` 接口支持 Provider 数组结构。
-- [ ] **Database**: 升级 `env_vars` 存储结构，支持 `[{type, vars: []}]` 的加密 JSON。
-- [ ] **Runner**: 适配新的数据结构，解析多 Provider 环境变量。
-- [ ] **API**: 
-    - [ ] 升级 `POST /api/profiles` 支持复杂结构。
-    - [ ] 新增 `PUT /api/profiles/:name` 支持更新操作。
-    - [ ] 新增 `GET /api/profiles/:name` 用于编辑回显。
+---
 
-#### Frontend
-- [ ] **Components**: 
-    - [ ] `ProviderCard` (单 Provider 配置块)。
-    - [ ] `EnvVarTable` (环境变量键值对编辑器)。
-- [ ] **Logic**: 重构表单状态管理，支持动态增删 Provider 和 Variables。
-- [ ] **UI**: 实现编辑模式，优化新建流程。
+## 6. 使用技巧与常见问题 (Tips & Troubleshooting)
 
-## 6. 常用命令参考 (Future)
-
-*   `anyai ui` - 启动 Web 管理界面
-*   `anyai list` - 列出所有可用 Profile
-*   `anyai run <profile> -- <cmd>` - 以指定配置运行命令
-*   `anyai set <profile> key=value` - 快速设置变量 (CLI 方式)
+### 6.1 环境变量解析陷阱 (Shell Expansion)
+**问题**: 在使用 `ais run profile -- echo $ENV_VAR` 时，输出的可能不是 Profile 中配置的值。
+**原因**: 大多数 Shell (如 PowerShell, Zsh) 会在命令传给 `ais` 之前就尝试解析变量。
+**解决**: 
+*   **验证配置**: 使用 Node.js 验证：
+    ```bash
+    ais run <name> -- node -e "console.log(process.env.YOUR_VAR)"
+    ```
+*   **Windows (PowerShell)**: 使用单引号包裹命令或调用 `cmd /c`：
+    ```powershell
+    ais run <name> -- cmd /c 'echo %YOUR_VAR%'
+    ```
