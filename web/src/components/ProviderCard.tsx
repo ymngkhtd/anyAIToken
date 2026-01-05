@@ -85,6 +85,7 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({ provider, onUpdate, 
               onChange={(e) => updateVar(idx, 'value', e.target.value)}
             />
             <button
+              type="button"
               onClick={() => removeVar(idx)}
               className="p-2 text-slate-400 hover:text-red-500 rounded-md transition-colors"
             >
@@ -94,6 +95,7 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({ provider, onUpdate, 
         ))}
         
         <button
+          type="button"
           onClick={addVar}
           className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1 mt-2"
         >

@@ -75,3 +75,17 @@
     ```powershell
     ais run <name> -- cmd /c 'echo %YOUR_VAR%'
     ```
+
+### 6.2 前端开发注意事项 (Frontend Development Gotchas)
+**问题**: 在 React 表单 (Form) 中点击功能按钮（如“添加变量”）时，页面意外刷新或跳转回列表页。
+**原因**: HTML 标准规定，`<button>` 标签在 `<form>` 内部如果没有显式设置 `type` 属性，其默认值为 `type="submit"`。
+**解决**: 
+*   **非提交按钮**: 必须显式设置 `type="button"`。
+    ```tsx
+    // 错误示例
+    <button onClick={addVar}>Add</button> 
+    
+    // 正确示例
+    <button type="button" onClick={addVar}>Add</button>
+    ```
+*   **提交按钮**: 仅在需要触发表单 `onSubmit` 逻辑的按钮上保持 `type="submit"`（或不设，但建议显式设置）。

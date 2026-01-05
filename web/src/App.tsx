@@ -154,7 +154,7 @@ function App() {
                 {editProfileName ? <Edit2 className="w-5 h-5 text-indigo-600" /> : <Plus className="w-5 h-5 text-indigo-600" />}
                 {editProfileName ? `Edit ${editProfileName}` : 'Create New Profile'}
               </h2>
-              <button onClick={resetEditor} className="text-slate-400 hover:text-slate-600">
+              <button type="button" onClick={resetEditor} className="text-slate-400 hover:text-slate-600">
                 <XCircle className="w-6 h-6" />
               </button>
             </div>
