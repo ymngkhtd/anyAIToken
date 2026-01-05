@@ -1,5 +1,6 @@
 import spawn from 'cross-spawn';
 import { getProfile } from './profiles';
+import { openaiSetupHook, openaiCleanupHook } from './hooks/openai';
 
 export function runCommand(profileName: string, command: string, args: string[]) {
   const profile = getProfile(profileName);
@@ -9,6 +10,9 @@ export function runCommand(profileName: string, command: string, args: string[])
     process.exit(1);
   }
 
+  // Check for specialized hooks
+  const hasOpenAI = profile.providers?.some(p => p.type === 'openai');
+
   // Flatten providers into a single env object
   const profileEnv: Record<string, string> = {};
   if (profile.providers) {
@@ -17,6 +21,11 @@ export function runCommand(profileName: string, command: string, args: string[])
         profileEnv[v.key] = v.value;
       });
     });
+  }
+
+  // Execute Pre-run hooks
+  if (hasOpenAI) {
+    openaiSetupHook(profileEnv);
   }
 
   // Merge current environment with profile variables
@@ -34,10 +43,12 @@ export function runCommand(profileName: string, command: string, args: string[])
   child.on('error', (err) => {
     console.error(`Failed to start command: ${command}`);
     console.error(err);
+    if (hasOpenAI) openaiCleanupHook();
     process.exit(1);
   });
 
   child.on('close', (code) => {
+    if (hasOpenAI) openaiCleanupHook();
     process.exit(code ?? 0);
   });
 }

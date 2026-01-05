@@ -9,20 +9,45 @@ interface ProviderCardProps {
 }
 
 const PRESETS: Record<string, EnvVar[]> = {
-  gemini: [{ key: 'GOOGLE_API_KEY', value: '' }],
-  claude: [{ key: 'ANTHROPIC_API_KEY', value: '' }],
-  openai: [{ key: 'OPENAI_API_KEY', value: '' }],
-  custom: []
+  gemini: [
+    { key: 'GOOGLE_API_KEY', value: '' },
+    { key: 'GOOGLE_API_BASE_URL', value: '' }
+  ],
+  claude: [
+    { key: 'ANTHROPIC_AUTH_TOKEN', value: '' },
+    { key: 'ANTHROPIC_BASE_URL', value: '' }
+  ],
+  openai: [
+    { key: 'OPENAI_API_KEY', value: '' },
+    { key: 'OPENAI_BASE_URL', value: '' },
+    { key: 'OPENAI_MODEL', value: 'gpt-5.2' },
+    { key: 'OPENAI_MODEL_PROVIDER', value: 'anyProvider' },
+    { key: 'OPENAI_REASONING_EFFORT', value: 'high' }
+  ],
+  custom: [
+    { key: '', value: '' }
+  ]
 };
 
 export const ProviderCard: React.FC<ProviderCardProps> = ({ provider, onUpdate, onRemove }) => {
   
   const handleTypeChange = (newType: ProviderConfig['type']) => {
-    // If switching type, maybe pre-fill default keys if vars are empty
+    // Determine if we should overwrite existing vars with the new template
+    // We overwrite if:
+    // 1. Current vars are empty
+    // 2. Current vars are exactly the same as another preset's keys (user hasn't customized yet)
+    const currentKeys = provider.vars.map(v => v.key).filter(k => k !== '').join(',');
+    const isDefaultOrEmpty = provider.vars.length === 0 || 
+      Object.values(PRESETS).some(preset => 
+        preset.map(v => v.key).filter(k => k !== '').join(',') === currentKeys
+      );
+
     let newVars = [...provider.vars];
-    if (newVars.length === 0 && PRESETS[newType]) {
-      newVars = [...PRESETS[newType]];
+    if (isDefaultOrEmpty && PRESETS[newType]) {
+      // Create a fresh copy of the preset to avoid reference sharing
+      newVars = PRESETS[newType].map(v => ({ ...v }));
     }
+    
     onUpdate({ ...provider, type: newType, vars: newVars });
   };
 

@@ -41,8 +41,15 @@ function App() {
   const startNewProfile = () => {
     resetEditor();
     setIsEditing(true);
-    // Add one default provider
-    setProviders([{ id: crypto.randomUUID(), type: 'gemini', vars: [{ key: 'GOOGLE_API_KEY', value: '' }] }]);
+    // Add one default provider with Gemini template
+    setProviders([{ 
+      id: crypto.randomUUID(), 
+      type: 'gemini', 
+      vars: [
+        { key: 'GOOGLE_API_KEY', value: '' },
+        { key: 'GOOGLE_API_BASE_URL', value: '' }
+      ] 
+    }]);
   };
 
   const startEditProfile = async (profileName: string) => {
@@ -106,8 +113,11 @@ function App() {
   const addProvider = () => {
     setProviders([...providers, { 
       id: crypto.randomUUID(), 
-      type: 'custom', 
-      vars: [{ key: '', value: '' }] 
+      type: 'gemini', 
+      vars: [
+        { key: 'GOOGLE_API_KEY', value: '' },
+        { key: 'GOOGLE_API_BASE_URL', value: '' }
+      ] 
     }]);
   };
 
