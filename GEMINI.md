@@ -16,7 +16,7 @@
 ## 3. 系统设计 (System Design)
 
 ### 3.1 核心工作流 (Workflow)
-1.  **Web UI 管理**: 用户通过 `ais ui` 启动本地服务，在界面上创建和编辑 Profile。每个 Profile 可以包含多个 Provider（如 Gemini, OpenAI, Claude）。
+1.  **Web UI 管理**: 用户通过 `ais ui` 启动本地服务，在界面上创建和编辑 Profile。每个 Profile 可以包含多个 Provider（如 Gemini, OpenAI, Claude）以及一个关联的官网链接。
 2.  **数据存储**: 数据以加密 JSON 字符串形式存储在 SQLite 数据库中。
 3.  **CLI 执行**: 
     *   用户运行 `ais run <profile> -- <command>`。
@@ -31,6 +31,7 @@
 | id | UUID | 主键 |
 | name | String | 唯一标识 |
 | provider | String | 主 Provider 类型 (主要用于前端图标展示) |
+| website | String | 关联的 Provider 官网地址 |
 | env_vars | Encrypted JSON | 存储 `ProviderConfig[]` 结构的加密字符串 |
 
 **ProviderConfig 结构**
@@ -52,6 +53,16 @@
 - [x] **Runner**: 适配多 Provider 环境变量拍平注入。
 - [x] **API**: 实现 CRUD 完整接口（GET/POST/PUT/DELETE）。
 - [x] **Frontend**: 实现 `ProviderCard` 组件与复杂 Profile 编辑器。
+
+### Phase 5: 自动执行钩子 (Automation Hooks) - [x]
+- [x] **OpenAI/Codex CLI 适配**: 
+    - [x] 自动生成 `~/.codex/config.toml` 和 `~/.codex/auth.json`。
+    - [x] 支持通过环境变量映射 TOML 字段（如模型名称、推理强度）。
+    - [x] 实现配置文件的安全备份与恢复机制。
+
+### Phase 6: 体验优化 (UX Improvements) - [x]
+- [x] **Website 关联**: 支持配置 Profile 对应的官网地址，并实现一键跳转。
+- [x] **模板填充**: 切换 Provider 类型时自动填充标准环境变量键名。
 
 ## 5. 常用命令参考
 
