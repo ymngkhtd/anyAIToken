@@ -40,7 +40,7 @@ npm link # Optional: makes 'ais' command available globally
 2. **Run a command with a profile**:
    ```bash
    # Syntax: ais run <profile_name> -- <command>
-   ais run personal-claude -- claude code "explain this file"
+   ais run personal-claude -- claude
    ```
 
 ---

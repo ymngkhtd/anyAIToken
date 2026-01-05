@@ -40,7 +40,7 @@ npm link # 可选：使 'ais' 命令全局可用
 2. **使用 Profile 运行命令**:
    ```bash
    # 语法: ais run <profile_name> -- <command>
-   ais run personal-claude -- claude code "explain this file"
+   ais run personal-claude -- claude
    ```
 
 ---
