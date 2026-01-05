@@ -1,0 +1,34 @@
+{
+  "name": "anyaitoken",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bin": {
+    "ais": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ymngkhtd/anyAIToken.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ymngkhtd/anyAIToken/issues"
+  },
+  "homepage": "https://github.com/ymngkhtd/anyAIToken#readme",
+  "description": "",
+  "dependencies": {
+    "better-sqlite3": "^12.5.0",
+    "commander": "^14.0.2",
+    "cors": "^2.8.5",
+    "cross-spawn": "^7.0.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "zod": "^4.3.5"
+  }
+}
