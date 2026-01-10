@@ -26,7 +26,11 @@
 git clone https://github.com/your-username/anyAIToken.git
 cd anyAIToken
 npm install
+
+cd web
+npm install
 npm run build
+
 npm link # Optional: makes 'ais' command available globally
 ```
 

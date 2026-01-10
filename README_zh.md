@@ -24,10 +24,13 @@
 
 ```bash
 git clone https://github.com/your-username/anyAIToken.git
-cd anyAIToken
+npm install
+
+cd web
 npm install
 npm run build
-npm link # 可选：使 'ais' 命令全局可用
+
+npm link # Optional: makes 'ais' command available globally
 ```
 
 ### 使用方法
