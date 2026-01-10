@@ -220,7 +220,7 @@ function App() {
                 type="file" 
                 ref={fileInputRef} 
                 className="hidden" 
-                accept=".json" 
+                accept=".ais" 
                 onChange={handleFileChange}
               />
               <button

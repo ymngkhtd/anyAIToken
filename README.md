@@ -12,7 +12,7 @@
 - 🔒 **Local Security**: All sensitive API keys are encrypted using **AES-256-GCM** before being stored in a local SQLite database.
 - 🌐 **Web Management UI**: A modern React-based dashboard to manage your profiles visually.
 - 🧩 **Multi-Provider Support**: Group multiple environment variables (e.g., Gemini + OpenAI) into a single logical "Profile".
-- 🔄 **Import/Export**: Easily backup or migrate your encrypted profiles via JSON.
+- 🔄 **Import/Export**: Easily backup or migrate your encrypted profiles.
 - ⚡ **Automation Hooks**: Automatically generates configuration files for specialized tools (e.g., GPT-Codex CLI).
 - 📦 **Zero-Config Deployment**: No external database required. Single-file SQLite storage.
 
