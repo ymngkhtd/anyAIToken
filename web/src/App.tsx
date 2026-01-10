@@ -34,15 +34,19 @@ function App() {
   }, []);
 
   const handleExport = async () => {
+    const password = prompt('Please set a password to encrypt your profiles for export:');
+    if (!password) return; // Cancelled
+
     try {
-      const res = await axios.get('/api/export');
+      const res = await axios.post('/api/export', { password });
+      // The server returns { payload: "encrypted_string" }
       const jsonString = JSON.stringify(res.data, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ais-config-${new Date().toISOString().slice(0,10)}.json`;
+      a.download = `ais-config-${new Date().toISOString().slice(0,10)}.ais`; // Use .ais extension to distinguish
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -64,12 +68,25 @@ function App() {
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
-        const json = JSON.parse(event.target?.result as string);
-        await axios.post('/api/import', json);
+        const fileContent = JSON.parse(event.target?.result as string);
+        let password = '';
+
+        // Check if file is encrypted (has payload string)
+        if (fileContent.payload && typeof fileContent.payload === 'string') {
+           password = prompt('Enter password to decrypt this file:') || '';
+           if (!password) return;
+        }
+
+        // Send to server (server handles decryption if password is provided)
+        await axios.post('/api/import', { 
+          payload: fileContent.payload || fileContent, // Send payload directly if encrypted, or full object if legacy
+          password 
+        });
+        
         alert('Import successful!');
         fetchProfiles();
       } catch (error) {
-        alert('Import failed: Invalid file or server error');
+        alert('Import failed: Invalid password or corrupted file');
         console.error(error);
       }
       // Reset input

@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { createProfile, deleteProfile, listProfiles, updateProfile, getProfile, getAllProfilesDecrypted, importProfile } from '../core/profiles';
+import { encryptWithPassword, decryptWithPassword } from '../core/encryption';
 import { Profile } from '../types';
 
 const app = express();
@@ -17,37 +18,68 @@ if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
 }
 
-// Export all profiles
-app.get('/api/export', (req, res) => {
+// Export all profiles (Encrypted)
+app.post('/api/export', (req, res) => {
   try {
+    const { password } = req.body;
+    
+    // We strictly require a password for export security
+    if (!password) {
+      return res.status(400).json({ error: 'Encryption password is required' });
+    }
+
     const data = getAllProfilesDecrypted();
     const exportPayload = {
       meta: {
         version: 1,
         exported_at: new Date().toISOString(),
-        app: 'anyaitoken'
+        app: 'anyaitoken',
+        encrypted: true
       },
       data
     };
-    res.json(exportPayload);
+
+    const jsonString = JSON.stringify(exportPayload);
+    const encryptedData = encryptWithPassword(jsonString, password);
+
+    // Return as a wrapped object or raw string?
+    // Let's return a JSON object containing the encrypted string
+    res.json({ payload: encryptedData });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to export profiles' });
   }
 });
 
-// Import profiles
+// Import profiles (Encrypted)
 app.post('/api/import', (req, res) => {
   try {
-    const payload = req.body;
+    const { payload, password } = req.body;
+    let importData: any;
+
+    // Handle Encrypted Payload
+    if (typeof payload === 'string') {
+      if (!password) {
+        return res.status(400).json({ error: 'Password required for encrypted file' });
+      }
+      try {
+        const decryptedJson = decryptWithPassword(payload, password);
+        importData = JSON.parse(decryptedJson);
+      } catch (e) {
+        return res.status(401).json({ error: 'Invalid password or corrupted file' });
+      }
+    } else {
+      // Fallback for legacy/plaintext imports if allowed (though we are moving to encrypted only)
+      importData = payload;
+    }
     
     // Basic validation
-    if (!payload || !payload.meta || !Array.isArray(payload.data)) {
+    if (!importData || !importData.meta || !Array.isArray(importData.data)) {
       return res.status(400).json({ error: 'Invalid import format' });
     }
 
     let importedCount = 0;
-    for (const profile of payload.data) {
+    for (const profile of importData.data) {
       try {
         importProfile(profile);
         importedCount++;
