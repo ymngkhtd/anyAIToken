@@ -12,6 +12,7 @@
 - 🔒 **本地安全**: 所有敏感的 API Key 在存入本地 SQLite 数据库前均经过 **AES-256-GCM** 加密。
 - 🌐 **Web 管理界面**: 基于 React 开发的现代仪表盘，可视化管理你的所有 Profile。
 - 🧩 **多 Provider 支持**: 支持将多个环境变量（如 Gemini + OpenAI）组合进一个逻辑 “Profile” 中。
+- 🔄 **导入/导出**: 支持通过 JSON 文件轻松备份或迁移加密的 Profile 配置。
 - ⚡ **自动化钩子 (Hooks)**: 为特定工具（如 GPT-Codex CLI）自动生成所需的配置文件。
 - 📦 **零配置部署**: 无需外部数据库，采用单文件 SQLite 存储。
 

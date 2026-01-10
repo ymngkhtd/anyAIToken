@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { Trash2, Plus, Terminal, Key, Database, Copy, Edit2, XCircle, ExternalLink } from 'lucide-react';
+import { Trash2, Plus, Terminal, Key, Database, Copy, Edit2, XCircle, ExternalLink, Download, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile, ProviderConfig, DecryptedProfile } from './types';
 import { ProviderCard } from './components/ProviderCard';
@@ -8,6 +8,7 @@ import { ProviderCard } from './components/ProviderCard';
 function App() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Editor State
   const [isEditing, setIsEditing] = useState(false);
@@ -31,6 +32,51 @@ function App() {
   useEffect(() => {
     fetchProfiles();
   }, []);
+
+  const handleExport = async () => {
+    try {
+      const res = await axios.get('/api/export');
+      const jsonString = JSON.stringify(res.data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ais-config-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Export failed');
+      console.error(error);
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        await axios.post('/api/import', json);
+        alert('Import successful!');
+        fetchProfiles();
+      } catch (error) {
+        alert('Import failed: Invalid file or server error');
+        console.error(error);
+      }
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  };
 
   const resetEditor = () => {
     setIsEditing(false);
@@ -95,8 +141,9 @@ function App() {
 
       resetEditor();
       fetchProfiles();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to save profile');
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
+      alert(err.response?.data?.error || 'Failed to save profile');
     }
   };
 
@@ -151,13 +198,37 @@ function App() {
             <p className="text-slate-500 mt-1">Manage your AI CLI tokens and profiles securely.</p>
           </div>
           {!isEditing && (
-            <button
-              onClick={startNewProfile}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              New Profile
-            </button>
+            <div className="flex gap-2">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept=".json" 
+                onChange={handleFileChange}
+              />
+              <button
+                onClick={handleImportClick}
+                className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm transition-colors text-sm"
+              >
+                <Upload className="w-4 h-4" />
+                Import
+              </button>
+              <button
+                onClick={handleExport}
+                className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm transition-colors text-sm"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
+              <div className="w-px h-8 bg-slate-200 mx-1"></div>
+              <button
+                onClick={startNewProfile}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm transition-colors text-sm"
+              >
+                <Plus className="w-5 h-5" />
+                New Profile
+              </button>
+            </div>
           )}
         </div>
 

@@ -93,6 +93,40 @@ export function listProfiles(): Omit<Profile, 'env_vars'>[] {
   return stmt.all() as Omit<Profile, 'env_vars'>[];
 }
 
+export function getAllProfilesDecrypted(): DecryptedProfile[] {
+  const profiles = listProfiles();
+  const decrypted: DecryptedProfile[] = [];
+  
+  for (const p of profiles) {
+    try {
+      const full = getProfile(p.name);
+      if (full) decrypted.push(full);
+    } catch (e) {
+      console.warn(`Skipping profile ${p.name} due to decryption error.`);
+    }
+  }
+  
+  return decrypted;
+}
+
+export function importProfile(profileData: any): void {
+  // Robustly extract fields with defaults for forward/backward compatibility
+  const name = profileData.name;
+  const provider = profileData.provider || 'custom'; // fallback for old exports
+  const providers = profileData.providers || []; // fallback
+  const website = profileData.website; // optional
+
+  if (!name) throw new Error('Invalid profile data: name is missing');
+
+  const existing = getProfile(name);
+  
+  if (existing) {
+    updateProfile(name, providers, website);
+  } else {
+    createProfile(name, provider, providers, website);
+  }
+}
+
 export function deleteProfile(name: string): boolean {
   const stmt = db.prepare('DELETE FROM profiles WHERE name = ?');
   const info = stmt.run(name);

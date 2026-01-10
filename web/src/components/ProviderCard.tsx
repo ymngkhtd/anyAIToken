@@ -81,7 +81,7 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({ provider, onUpdate, 
         <select
           className="w-full md:w-1/2 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           value={provider.type}
-          onChange={(e) => handleTypeChange(e.target.value as any)}
+          onChange={(e) => handleTypeChange(e.target.value as ProviderConfig['type'])}
         >
           <option value="gemini">Google Gemini</option>
           <option value="claude">Anthropic Claude</option>

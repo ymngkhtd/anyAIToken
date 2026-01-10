@@ -2,20 +2,66 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { createProfile, deleteProfile, listProfiles, updateProfile, getProfile } from '../core/profiles';
+import { createProfile, deleteProfile, listProfiles, updateProfile, getProfile, getAllProfilesDecrypted, importProfile } from '../core/profiles';
 import { Profile } from '../types';
 
 const app = express();
 const PORT = 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increase limit for large imports
 
 // Serve static files from the React frontend app
 const clientBuildPath = path.join(__dirname, '../../web/dist');
 if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
 }
+
+// Export all profiles
+app.get('/api/export', (req, res) => {
+  try {
+    const data = getAllProfilesDecrypted();
+    const exportPayload = {
+      meta: {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        app: 'anyaitoken'
+      },
+      data
+    };
+    res.json(exportPayload);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to export profiles' });
+  }
+});
+
+// Import profiles
+app.post('/api/import', (req, res) => {
+  try {
+    const payload = req.body;
+    
+    // Basic validation
+    if (!payload || !payload.meta || !Array.isArray(payload.data)) {
+      return res.status(400).json({ error: 'Invalid import format' });
+    }
+
+    let importedCount = 0;
+    for (const profile of payload.data) {
+      try {
+        importProfile(profile);
+        importedCount++;
+      } catch (e) {
+        console.error(`Failed to import item:`, e);
+      }
+    }
+
+    res.json({ message: `Successfully imported ${importedCount} profiles` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to process import' });
+  }
+});
 
 // Get all profiles (summary)
 app.get('/api/profiles', (req, res) => {
