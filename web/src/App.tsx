@@ -227,14 +227,14 @@ function App() {
                 onClick={handleImportClick}
                 className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm transition-colors text-sm"
               >
-                <Upload className="w-4 h-4" />
+                <Download className="w-4 h-4" />
                 Import
               </button>
               <button
                 onClick={handleExport}
                 className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm transition-colors text-sm"
               >
-                <Download className="w-4 h-4" />
+                <Upload className="w-4 h-4" />
                 Export
               </button>
               <div className="w-px h-8 bg-slate-200 mx-1"></div>
