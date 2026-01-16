@@ -65,11 +65,16 @@
 - [x] **模板填充**: 切换 Provider 类型时自动填充标准环境变量键名。
 - [x] **配置导入/导出**: 支持 JSON 格式的配置备份与迁移。
 
-## 5. 常用命令参考
+## 6. 常用命令参考
 
 *   `ais ui` - 启动 Web 管理界面
-*   `ais list` - 列出所有可用 Profile
-*   `ais run <profile> -- <cmd>` - 以指定配置运行命令
+*   `ais list` - 列出所有可用 Profile (并标记默认 Profile)
+*   `ais default <profile>` - 设置全局默认 Profile
+*   `ais default --unset` - 重置/取消默认 Profile
+*   `ais run [profile] -- <cmd>` - 以指定或默认配置运行命令
+    *   示例: `ais run personal -- claude code`
+    *   默认模式: `ais run -- claude code` (需先设置 default)
+*   `ais run <cmd>` - (快捷方式) 如果 `<cmd>` 不是 Profile 名，则使用默认 Profile 运行
 
 ---
 

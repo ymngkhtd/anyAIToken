@@ -1,14 +1,28 @@
 import spawn from 'cross-spawn';
-import { getProfile } from './profiles';
+import { getProfile, getDefaultProfileName } from './profiles';
 import { openaiSetupHook, openaiCleanupHook } from './hooks/openai';
 
-export function runCommand(profileName: string, command: string, args: string[]) {
-  const profile = getProfile(profileName);
+export function runCommand(profileName: string | null, command: string, args: string[]) {
+  let activeProfileName = profileName;
   
-  if (!profile) {
-    console.error(`Error: Profile '${profileName}' not found.`);
+  if (!activeProfileName) {
+    activeProfileName = getDefaultProfileName();
+  }
+
+  if (!activeProfileName) {
+    console.error(`Error: No profile specified and no default profile set.`);
+    console.log('Use "ais default <name>" to set a default profile.');
     process.exit(1);
   }
+
+  const profile = getProfile(activeProfileName);
+  
+  if (!profile) {
+    console.error(`Error: Profile '${activeProfileName}' not found.`);
+    process.exit(1);
+  }
+
+  console.log(`[AIS] Using profile: ${activeProfileName}`);
 
   // Check for specialized hooks
   const hasOpenAI = profile.providers?.some(p => p.type === 'openai');

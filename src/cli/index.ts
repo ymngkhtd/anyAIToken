@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { runCommand } from '../core/runner';
-import { createProfile, listProfiles, deleteProfile } from '../core/profiles';
+import { createProfile, listProfiles, deleteProfile, getDefaultProfileName, setDefaultProfileName } from '../core/profiles';
 
 import { startServer } from '../server';
 
@@ -24,10 +24,45 @@ program
   .description('List all available profiles')
   .action(() => {
     const profiles = listProfiles();
+    const defaultProfile = getDefaultProfileName();
+    
     if (profiles.length === 0) {
       console.log('No profiles found.');
     } else {
-      console.table(profiles);
+      const data = profiles.map(p => ({
+        ...p,
+        is_default: p.name === defaultProfile ? '★' : ''
+      }));
+      console.table(data);
+    }
+  });
+
+program
+  .command('default [name]')
+  .description('Set or unset the global default profile')
+  .option('--unset', 'Unset the current default profile')
+  .action((name, options) => {
+    if (options.unset) {
+      setDefaultProfileName(null);
+      console.log('Default profile unset.');
+      return;
+    }
+
+    if (!name) {
+      const current = getDefaultProfileName();
+      if (current) {
+        console.log(`Current default profile: ${current}`);
+      } else {
+        console.log('No default profile set.');
+      }
+      return;
+    }
+
+    try {
+      setDefaultProfileName(name);
+      console.log(`Default profile set to: ${name}`);
+    } catch (err: any) {
+      console.error(`Error: ${err.message}`);
     }
   });
 
@@ -71,21 +106,42 @@ program
   });
 
 program
-  .command('run <profile>')
-  .description('Run a command with the specified profile environment')
+  .command('run [profile]')
+  .description('Run a command with the specified or default profile environment')
   .argument('[command...]', 'The command to run')
   .allowUnknownOption() // Allow flags like --version to be passed to the subprocess
   .action((profile, commandParts) => {
-    if (!commandParts || commandParts.length === 0) {
-      console.error('Error: No command specified to run.');
-      return;
+    // If first argument is '--', commander puts it in commandParts and profile is undefined
+    // If run like 'ais run ls', profile is 'ls' and commandParts is empty.
+    // We need to handle the case where profile is actually the start of the command.
+    
+    let actualProfile = profile;
+    let actualArgs = commandParts;
+
+    if (profile && !commandParts.length) {
+      // Case: ais run ls
+      // If 'ls' is not a profile, it might be the command.
+      const profiles = listProfiles();
+      const isProfile = profiles.some(p => p.name === profile);
+      
+      if (!isProfile) {
+        // Assume it's a command using default profile
+        actualProfile = null;
+        actualArgs = [profile];
+      } else {
+        // It IS a profile, but no command provided
+        console.error(`Error: No command specified to run for profile '${profile}'.`);
+        return;
+      }
+    } else if (!profile && !commandParts.length) {
+        console.error('Error: No command specified to run.');
+        return;
     }
     
-    const cmd = commandParts[0];
-    const args = commandParts.slice(1);
+    const cmd = actualArgs[0];
+    const args = actualArgs.slice(1);
     
-    console.log(`[AIS] Switching to profile: ${profile}`);
-    runCommand(profile, cmd, args);
+    runCommand(actualProfile || null, cmd, args);
   });
 
 program.parse(process.argv);

@@ -20,20 +20,20 @@ export function initDB() {
       id TEXT PRIMARY KEY,
       name TEXT UNIQUE NOT NULL,
       provider TEXT NOT NULL,
-      website TEXT,
       env_vars TEXT NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  const createSettingsTable = `
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    )
+  `;
   
   db.exec(createProfilesTable);
-
-  // Migration: Add website column if it doesn't exist
-  try {
-    db.exec("ALTER TABLE profiles ADD COLUMN website TEXT");
-  } catch (e) {
-    // Column might already exist, ignore error
-  }
+  db.exec(createSettingsTable);
 }
 
 export default db;

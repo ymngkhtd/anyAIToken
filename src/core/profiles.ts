@@ -132,3 +132,22 @@ export function deleteProfile(name: string): boolean {
   const info = stmt.run(name);
   return info.changes > 0;
 }
+
+export function getDefaultProfileName(): string | null {
+  const stmt = db.prepare('SELECT value FROM settings WHERE key = ?');
+  const row = stmt.get('default_profile') as { value: string } | undefined;
+  return row ? row.value : null;
+}
+
+export function setDefaultProfileName(name: string | null) {
+  if (name === null) {
+    db.prepare('DELETE FROM settings WHERE key = ?').run('default_profile');
+  } else {
+    // Verify profile exists
+    const profile = db.prepare('SELECT id FROM profiles WHERE name = ?').get(name);
+    if (!profile) {
+      throw new Error(`Profile '${name}' does not exist.`);
+    }
+    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('default_profile', name);
+  }
+}
